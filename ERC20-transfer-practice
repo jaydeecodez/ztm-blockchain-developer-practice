@@ -5,22 +5,35 @@ contract ERC20 {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
-    string constant public name = "MyTokenName";
-    string constant public symbol = "MTN";
-    uint8 constant public decimals = 18;
-
+    string public name;
+    string public symbol;
+    uint8 immutable public decimals;
     uint256 public totalSupply;
 
-    mapping (address => uint256) public balanceOf;
+    address public owner;
 
+    mapping (address => uint256) public balanceOf;
     mapping (address => mapping(address => uint256)) public allowance;
+
+    constructor(address _owner, string memory _name, string memory _symbol, uint8 _decimals) {
+        name = _name;
+        symbol = _symbol;
+        decimals = _decimals;
+        owner = _owner;
+    }
 
     function transfer(address to, uint256 value) external returns (bool) {        
         return _transfer(msg.sender, to, value);
     }
 
-    function giveMeOneToken() external {
-        balanceOf[msg.sender] += 1e18;
+    function _mint(address to, uint256 value) private {
+        balanceOf[to] += value;
+        totalSupply += value;
+    }
+
+    function mint(address to, uint256 value) external {
+        require(msg.sender == owner);
+        _mint(to, value);
     }
 
     function transferFrom(address from, address to, uint256 value) external returns (bool) {
