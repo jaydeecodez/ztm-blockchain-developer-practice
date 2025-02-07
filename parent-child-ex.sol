@@ -1,16 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-contract Parent {
-    uint256 public myNumber;
+contract Father {
+    uint256 public myNumber1;
 
-    function setMyNumber(uint256 newNumber) external  {
-        myNumber = newNumber;
+    function setMyNumber1(uint256 newNumber) external  {
+        myNumber1 = newNumber;
     }
 }
 
-contract Child is Parent {
-    function addToMyNumber(uint256 addition) external  {
-        myNumber+= addition;
+contract Mother {
+    uint256 public myNumber2;
+
+    function setMyNumber2(uint256 newNumber) external  {
+        myNumber2 = newNumber;
+    }
+}
+
+contract Child is Father, Mother {
+    function addToBothNumbers(uint256 addition) external  {
+        myNumber1 += addition;
+        myNumber2 += addition;
     }
 }
