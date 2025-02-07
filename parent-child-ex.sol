@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-contract Father {
+contract GrandFather {
     uint256 public myNumber1;
 
     function setMyNumber1(uint256 newNumber) external  {
@@ -9,7 +9,7 @@ contract Father {
     }
 }
 
-contract Mother {
+contract Father is GrandFather {
     uint256 public myNumber2;
 
     function setMyNumber2(uint256 newNumber) external  {
@@ -17,7 +17,7 @@ contract Mother {
     }
 }
 
-contract Child is Father, Mother {
+contract Child is Father {
     function addToBothNumbers(uint256 addition) external  {
         myNumber1 += addition;
         myNumber2 += addition;
