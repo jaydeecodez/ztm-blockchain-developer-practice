@@ -1,30 +1,46 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-contract Father {
-    uint256 private myNumber;
+contract GrandFather {
+    string public myStringGrandFather;
 
-    function setMyNumber(uint256 newNumber) external virtual {
-        myNumber = newNumber;
+    function setMyString() public virtual {
+        myStringGrandFather = "GrandFather";
     }
 }
 
-contract Mother {
-    uint256 private myNumber;
+contract GrandMother {
+    string public myStringGrandMother;
 
-    function setMyNumber(uint256 newNumber) external virtual {
-        myNumber = newNumber;
+    function setMyString() public virtual {
+        myStringGrandMother = "GrandMother";
     }
 }
 
-contract Child is Mother, Father {
-    uint256 private myNumber;
-    
-    function addToMyNumber(uint256 addition) external {
-        myNumber += addition;
-    }
+contract Father is GrandFather {
+    string public myStringFather;
 
-    function setMyNumber(uint256 newNumber) external override(Mother, Father) {
-        myNumber = 5;
+    function setMyString() public virtual override {
+        myStringFather = "Father";
+        super.setMyString();
+    }
+}
+
+contract Mother is GrandMother {
+    string public myStringMother;
+
+    function setMyString() public virtual override {
+        myStringMother = "Mother";
+        super.setMyString();
+    }
+}
+
+contract Child is Father, Mother {
+    string public myStringChild;
+
+    function setMyString() public override(Father, Mother) {
+        myStringChild = "Child";
+        Father.setMyString();
+        Mother.setMyString();
     }
 }
