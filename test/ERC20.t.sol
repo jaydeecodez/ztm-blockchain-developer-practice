@@ -14,11 +14,15 @@ contract ERC20Test is ERC20, Test {
         alice = makeAddr("alice");
         bob = makeAddr("bob");
 
-        _mint(alice, 200);
+        _mint(alice, 300e18);
     }
 
     function testTransfersTokenCorrectly() public {
         vm.prank(alice);
-        this.transfer(bob, 100);
+        bool success = this.transfer(bob, 100e18);
+        assertTrue(success);
+
+        assertEqDecimal(this.balanceOf(alice), 100e18, decimals);
+        assertEq(this.balanceOf(bob), 100e18, decimals);
     }
 }
