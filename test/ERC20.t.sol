@@ -23,6 +23,6 @@ contract ERC20Test is ERC20, Test {
         assertTrue(success);
 
         assertEqDecimal(this.balanceOf(alice), 100e18, decimals);
-        assertEq(this.balanceOf(bob), 100e18, decimals);
+        assertEqDecimal(this.balanceOf(bob), 100e18, decimals);
     }
 }
