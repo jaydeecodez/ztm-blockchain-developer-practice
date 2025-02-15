@@ -4,23 +4,26 @@ import { expect } from "chai";
 import { smock } from "@defi-wonderland/smock";
 import { ERC20__factory } from "../typechain-types";
 
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
+
 describe("ERC20", function () {
-    it("transfers tokens correctly", async function () {
-        const [alice, bob] = await ethers.getSigners();
+    let alice: HardhatEthersSigner,
+        bob: HardhatEthersSigner,
+        erc20Token: MockContract<ERC20>;
+
+    this.beforeEach(async function () {
+        [alice, bob] = await ethers.getSigners();
 
         const ERC20 = await smock.mock<ERC20__factory>("ERC20");
-        const erc20Token = await ERC20.deploy("Name", "SYM", 18);
+        let erc20Token = await ERC20.deploy("Name", "SYM", 18);
 
         await erc20Token.setVariable("balanceOf", {
             [alice.address]: 300,
         });
         await network.provider.send("evm_mine");
+    })
 
-        console.log(
-            "Alice balance here is",
-            (await erc20Token.balanceOf(alice.address)).toString()
-        );
-
+    it("transfers tokens correctly", async function () {
         await expect(
             await erc20Token.transfer(bob.address, 100)
         ).to.changeTokenBalances(erc20Token, [alice, bob], [-100, 100]);
@@ -32,32 +35,12 @@ describe("ERC20", function () {
     });
 
     it("should revert if sender has insufficient balance", async function () {
-        const [alice, bob] = await ethers.getSigners();
-
-        const ERC20 = await smock.mock<ERC20__factory>("ERC20");
-        const erc20Token = await ERC20.deploy("Name", "SYM", 18);
-
-        await erc20Token.setVariable("balanceOf", {
-            [alice.address]: 300,
-        });
-        await network.provider.send("evm_mine");
-
         await expect(
             erc20Token.transfer(bob.address, 400)
         ).to.be.revertedWith("ERC20: Insufficient sender balance 2");
     })
 
     it("should emit Transfer event on transfers", async function () {
-        const [alice, bob] = await ethers.getSigners();
-
-        const ERC20 = await smock.mock<ERC20__factory>("ERC20");
-        const erc20Token = await ERC20.deploy("Name", "SYM", 18);
-
-        await erc20Token.setVariable("balanceOf", {
-            [alice.address]: 300,
-        });
-        await network.provider.send("evm_mine");
-
         await expect(
             erc20Token.transfer(bob.address, 200)
         ).to.emit(
