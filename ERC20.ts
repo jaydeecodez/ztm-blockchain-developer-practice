@@ -30,4 +30,20 @@ describe("ERC20", function () {
         ).to.changeTokenBalances(erc20Token, [alice, bob], [50, -50]);
 
     });
+
+    it.only("should revert if sender has insufficient balance", async function () {
+        const [alice, bob] = await ethers.getSigners();
+
+        const ERC20 = await smock.mock<ERC20__factory>("ERC20");
+        const erc20Token = await ERC20.deploy("Name", "SYM", 18);
+
+        await erc20Token.setVariable("balanceOf", {
+            [alice.address]: 300,
+        });
+        await network.provider.send("evm_mine");
+
+        await expect(
+            erc20Token.transfer(bob.address, 400)
+        ).to.be.revertedWith("ERC20: Insufficient sender balance 2");
+    })
 });
