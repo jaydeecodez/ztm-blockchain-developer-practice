@@ -16,8 +16,18 @@ describe("ERC20", function () {
         });
         await network.provider.send("evm_mine");
 
+        console.log(
+            "Alice balance here is",
+            (await erc20Token.balanceOf(alice.address)).toString()
+        );
+
         await expect(
             await erc20Token.transfer(bob.address, 100)
         ).to.changeTokenBalances(erc20Token, [alice, bob], [-100, 100]);
+
+        await expect(
+            await erc20Token.connect(bob).transfer(alice.address, 50)
+        ).to.changeTokenBalances(erc20Token, [alice, bob], [50, -50]);
+
     });
 });
