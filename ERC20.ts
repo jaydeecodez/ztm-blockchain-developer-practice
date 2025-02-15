@@ -1,18 +1,14 @@
 import { ethers, network } from "hardhat";
 import { expect } from "chai";
 
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+
 import { smock } from "@defi-wonderland/smock";
 import { ERC20__factory } from "../typechain-types";
 
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-
 describe("ERC20", function () {
-    let alice: HardhatEthersSigner,
-        bob: HardhatEthersSigner,
-        erc20Token: MockContract<ERC20>;
-
-    this.beforeEach(async function () {
-        [alice, bob] = await ethers.getSigners();
+    async function deployAndMockERC20() {
+        const [alice, bob] = await ethers.getSigners();
 
         const ERC20 = await smock.mock<ERC20__factory>("ERC20");
         let erc20Token = await ERC20.deploy("Name", "SYM", 18);
@@ -21,9 +17,13 @@ describe("ERC20", function () {
             [alice.address]: 300,
         });
         await network.provider.send("evm_mine");
-    })
+
+        return { alice, bob, erc20Token };
+    }
 
     it("transfers tokens correctly", async function () {
+        const { alice, bob, erc20Token } = await loadFixture(deployAndMockERC20);
+
         await expect(
             await erc20Token.transfer(bob.address, 100)
         ).to.changeTokenBalances(erc20Token, [alice, bob], [-100, 100]);
@@ -35,12 +35,14 @@ describe("ERC20", function () {
     });
 
     it("should revert if sender has insufficient balance", async function () {
+        const { bob, erc20Token } = await loadFixture(deployAndMockERC20);
         await expect(
             erc20Token.transfer(bob.address, 400)
         ).to.be.revertedWith("ERC20: Insufficient sender balance 2");
     })
 
     it("should emit Transfer event on transfers", async function () {
+        const { alice, bob, erc20Token } = await loadFixture(deployAndMockERC20);
         await expect(
             erc20Token.transfer(bob.address, 200)
         ).to.emit(
