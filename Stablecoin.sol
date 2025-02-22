@@ -30,7 +30,7 @@ contract StableCoin is ERC20 {
     }
 
     function depositCollateralBuffer() external payable {
-        uint256 surplusInUsd = 500;
+        uint256 surplusInUsd = _getSurplusInContractUsd();
         uint256 ethUsdPrice = 1000;
 
         // usdInDpcPrice = 250 / 500 = 0.5
@@ -43,7 +43,7 @@ contract StableCoin is ERC20 {
     }
 
     function withdrawCollateralBuffer(uint256 burnDepositorCoinAmount) external {
-        uint256 surplusInUsd = 500;
+        uint256 surplusInUsd = _getSurplusInContractUsd();
         uint256 ethUsdPrice = 1000;
 
         depositorCoin.burn(msg.sender, burnDepositorCoinAmount);
@@ -59,5 +59,15 @@ contract StableCoin is ERC20 {
 
         (bool success,) = msg.sender.call{ value: refundingEth}("");
         require(success, "STC: Withdraw collateral buffer transaction failed");
+    }
+
+    function _getSurplusInContractUsd() private view returns (uint256) {
+        uint256 ethUsdPrice = 1000;
+        uint256 ethContractBalanceInUsd = (address(this).balance - msg.value) * ethUsdPrice;
+
+        uint256 totalStableCoinBalanceInUsd = totalSupply;
+
+        uint256 surplus = ethContractBalanceInUsd - totalStableCoinBalanceInUsd;
+        return surplus;
     }
 }
