@@ -10,6 +10,13 @@ contract StableCoin is ERC20 {
     constructor(
         string memory _name,
         string memory _symbol,
-        uint8 _decimals
-    ) ERC20(_name, _symbol, _decimals) {}
+    ) ERC20(_name, _symbol, 18) {}
+
+    function mint() external payable {
+        msg.value;
+
+        uint256 ethUsdPrice = 1000;
+        uint256 mintStablecoinAmount = msg.value * ethUsdPrice;
+        _mint(msg.sender, mintStablecoinAmount);
+    }
 }
