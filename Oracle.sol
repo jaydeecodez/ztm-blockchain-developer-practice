@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-contract EthUsdPrice {
+contract Oracle {
     uint256 private price;
     address public owner;
 
