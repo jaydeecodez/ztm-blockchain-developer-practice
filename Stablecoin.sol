@@ -3,29 +3,29 @@ pragma solidity 0.8.28;
 
 import {ERC20} from "./ERC20.sol";
 import {DepositorCoin} from "./DepositorCoin.sol";
-import {EthUsdPrice} from "./EthUsdPrice.sol";
+import {Oracle} from "./Oracle.sol";
 
 contract StableCoin is ERC20 {
     DepositorCoin public depositorCoin;
-    EthUsdPrice public ethUsdPrice;
+    Oracle public oracle;
 
     constructor(
         string memory _name,
         string memory _symbol,
-        EthUsdPrice _ethUsdPrice
+        Oracle _oracle
     ) ERC20(_name, _symbol, 18) {
-        ethUsdPrice = _ethUsdPrice;
+        oracle = _oracle;
     }
 
     function mint() external payable {
-        uint256 mintStablecoinAmount = msg.value * ethUsdPrice.getPrice();
+        uint256 mintStablecoinAmount = msg.value * oracle.getPrice();
         _mint(msg.sender, mintStablecoinAmount);
     }
 
     function burn(uint256 burnStablecoinAmount) external {
         _burn(msg.sender, burnStablecoinAmount);
 
-        uint256 refundingEth = burnStablecoinAmount / ethUsdPrice.getPrice();
+        uint256 refundingEth = burnStablecoinAmount / oracle.getPrice();
 
         (bool success, ) = msg.sender.call{value: refundingEth}("");
         require(success, "STC: Burn refund transaction failed");
@@ -39,7 +39,7 @@ contract StableCoin is ERC20 {
 
         // 0.5e18 * 1000 * 0.5 = 250e18
         uint256 mintDepositorCoinAmount = msg.value *
-            ethUsdPrice.getPrice() *
+            oracle.getPrice() *
             usdInDpcPrice;
         depositorCoin.mint(msg.sender, mintDepositorCoinAmount);
     }
@@ -58,7 +58,7 @@ contract StableCoin is ERC20 {
         uint256 refundingUsd = burnDepositorCoinAmount / usdInDpcPrice;
 
         // 250 / 1000 = 0.25 ETH
-        uint256 refundingEth = refundingUsd / ethUsdPrice.getPrice();
+        uint256 refundingEth = refundingUsd / oracle.getPrice();
 
         (bool success, ) = msg.sender.call{value: refundingEth}("");
         require(success, "STC: Withdraw collateral buffer transaction failed");
@@ -66,7 +66,7 @@ contract StableCoin is ERC20 {
 
     function _getSurplusInContractUsd() private view returns (uint256) {
         uint256 ethContractBalanceInUsd = (address(this).balance - msg.value) *
-            ethUsdPrice.getPrice();
+            oracle.getPrice();
 
         uint256 totalStableCoinBalanceInUsd = totalSupply;
 
