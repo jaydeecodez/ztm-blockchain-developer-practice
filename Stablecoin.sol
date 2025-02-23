@@ -8,17 +8,21 @@ import {Oracle} from "./Oracle.sol";
 contract StableCoin is ERC20 {
     DepositorCoin public depositorCoin;
     Oracle public oracle;
+    uint256 public feeRatePercentage;
 
     constructor(
         string memory _name,
         string memory _symbol,
-        Oracle _oracle
+        Oracle _oracle,
+        uint256 _feeRatePercentage
     ) ERC20(_name, _symbol, 18) {
         oracle = _oracle;
+        feeRatePercentage = _feeRatePercentage;
     }
 
     function mint() external payable {
-        uint256 mintStablecoinAmount = msg.value * oracle.getPrice();
+        uint256 fee = _getFee(msg.value);
+        uint256 mintStablecoinAmount = (msg.value - fee) * oracle.getPrice();
         _mint(msg.sender, mintStablecoinAmount);
     }
 
@@ -27,8 +31,14 @@ contract StableCoin is ERC20 {
 
         uint256 refundingEth = burnStablecoinAmount / oracle.getPrice();
 
-        (bool success, ) = msg.sender.call{value: refundingEth}("");
+        uint256 fee = _getFee(refundingEth);
+
+        (bool success, ) = msg.sender.call{value: (refundingEth - fee)}("");
         require(success, "STC: Burn refund transaction failed");
+    }
+
+    function _getFee(uint256 ethAmount) private view returns (uint256) {
+        return (ethAmount * feeRatePercentage) / 100;
     }
 
     function depositCollateralBuffer() external payable {
