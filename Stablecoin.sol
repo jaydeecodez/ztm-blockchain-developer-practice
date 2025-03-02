@@ -9,15 +9,18 @@ contract StableCoin is ERC20 {
     DepositorCoin public depositorCoin;
     Oracle public oracle;
     uint256 public feeRatePercentage;
+    uint256 public initialCollateralRatioPercentage;
 
     constructor(
         string memory _name,
         string memory _symbol,
         Oracle _oracle,
-        uint256 _feeRatePercentage
+        uint256 _feeRatePercentage,
+        uint256 _initialCollateralRatioPercentage
     ) ERC20(_name, _symbol, 18) {
         oracle = _oracle;
         feeRatePercentage = _feeRatePercentage;
+        initialCollateralRatioPercentage = _initialCollateralRatioPercentage;
     }
 
     function mint() external payable {
@@ -52,6 +55,16 @@ contract StableCoin is ERC20 {
             uint256 deficitInEth = deficitInUsd / oracle.getPrice();
 
             addedSurplusEth = msg.value = deficitInEth;
+
+            uint256 requiredInitialSurplusInUsd = (initialCollateralRatioPercentage *
+                    totalSupply) / 100;
+            uint256 requiredInitialSurplusInEth = requiredInitialSurplusInUsd /
+                oracle.getPrice();
+
+            require(
+                addedSurplusEth >= requiredInitialSurplusInEth,
+                "STC: Initial collateral ratio not met"
+            );
 
             depositorCoin = new DepositorCoin("Depositor Coin", "DPC");
             // new surplus: (msg.value - deficitInEth) * oracle.getPrice();
