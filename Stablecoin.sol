@@ -42,22 +42,30 @@ contract StableCoin is ERC20 {
     }
 
     function depositCollateralBuffer() external payable {
-        uint256 surplusInUsd = _getSurplusInContractUsd();
+        int256 deficitOrSurplusInUsd = _getDeficitOrSurplusInContractUsd();
 
         uint256 usdInDpcPrice;
+        uint256 addedSurplusEth;
 
-        if (surplusInUsd == 0) {
+        if (deficitOrSurplusInUsd <= 0) {
+            uint256 deficitInUsd = uint256(deficitOrSurplusInUsd * -1);
+            uint256 deficitInEth = deficitInUsd / oracle.getPrice();
+
+            addedSurplusEth = msg.value = deficitInEth;
+
             depositorCoin = new DepositorCoin("Depositor Coin", "DPC");
-            // new surplus: msg.value * oracle.getPrice();
+            // new surplus: (msg.value - deficitInEth) * oracle.getPrice();
 
             usdInDpcPrice = 1;
         } else {
+            uint256 surplusInUsd = uint256(deficitOrSurplusInUsd);
             // usdInDpcPrice = 250 / 500 = 0.5
             usdInDpcPrice = depositorCoin.totalSupply() / surplusInUsd;
+            addedSurplusEth = msg.value;
         }
 
         // 0.5e18 * 1000 * 0.5 = 250e18
-        uint256 mintDepositorCoinAmount = msg.value *
+        uint256 mintDepositorCoinAmount = addedSurplusEth *
             oracle.getPrice() *
             usdInDpcPrice;
         depositorCoin.mint(msg.sender, mintDepositorCoinAmount);
@@ -66,8 +74,13 @@ contract StableCoin is ERC20 {
     function withdrawCollateralBuffer(
         uint256 burnDepositorCoinAmount
     ) external {
-        uint256 surplusInUsd = _getSurplusInContractUsd();
+        int256 deficitOrSurplusInUsd = _getDeficitOrSurplusInContractUsd();
+        require(
+            deficitOrSurplusInUsd > 0,
+            "STC: No depositor funds to withdraw"
+        );
 
+        uint256 surplusInUsd = uint256(deficitOrSurplusInUsd);
         depositorCoin.burn(msg.sender, burnDepositorCoinAmount);
 
         // usdInDpcPrice = 250 / 500 = 0.5
@@ -83,13 +96,14 @@ contract StableCoin is ERC20 {
         require(success, "STC: Withdraw collateral buffer transaction failed");
     }
 
-    function _getSurplusInContractUsd() private view returns (uint256) {
+    function _getDeficitOrSurplusInContractUsd() private view returns (int256) {
         uint256 ethContractBalanceInUsd = (address(this).balance - msg.value) *
             oracle.getPrice();
 
         uint256 totalStableCoinBalanceInUsd = totalSupply;
 
-        uint256 surplus = ethContractBalanceInUsd - totalStableCoinBalanceInUsd;
-        return surplus;
+        int256 surplusOrDeficit = int256(ethContractBalanceInUsd) -
+            int256(totalStableCoinBalanceInUsd);
+        return surplusOrDeficit;
     }
 }
