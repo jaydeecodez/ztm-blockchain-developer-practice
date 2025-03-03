@@ -34,6 +34,10 @@ function mulFixedPoint(uint256 a, FixedPoint b) pure returns (uint256) {
     return a * FixedPoint.unwrap(b) / DECIMALS;
 }
 
+function divFixedPoint(uint256 a, FixedPoint b) pure returns (uint256) {
+    return a * DECIMALS / FixedPoint.unwrap(b);
+}
+
 contract FixedPointTest {
     function testAddition(FixedPoint a, FixedPoint b) external pure returns (FixedPoint) {
         return a + b;
