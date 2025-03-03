@@ -50,14 +50,11 @@ contract StableCoin is ERC20 {
     function depositCollateralBuffer() external payable {
         int256 deficitOrSurplusInUsd = _getDeficitOrSurplusInContractUsd();
 
-        uint256 usdInDpcPrice;
-        uint256 addedSurplusEth;
-
         if (deficitOrSurplusInUsd <= 0) {
             uint256 deficitInUsd = uint256(deficitOrSurplusInUsd * -1);
             uint256 deficitInEth = deficitInUsd / oracle.getPrice();
 
-            addedSurplusEth = msg.value = deficitInEth;
+            uint256 addedSurplusEth = msg.value = deficitInEth;
 
             uint256 requiredInitialSurplusInUsd = (initialCollateralRatioPercentage *
                     totalSupply) / 100;
@@ -69,23 +66,26 @@ contract StableCoin is ERC20 {
                 "STC: Initial collateral ratio not met"
             );
 
+            uint256 initialDepositorSupply = addedSurplusEth *
+                oracle.getPrice();
             depositorCoin = new DepositorCoin(
                 "Depositor Coin",
                 "DPC",
-                depositorCoinLockTime
+                depositorCoinLockTime,
+                msg.sender,
+                initialDepositorSupply
             );
             // new surplus: (msg.value - deficitInEth) * oracle.getPrice();
-
-            usdInDpcPrice = 1;
-        } else {
-            uint256 surplusInUsd = uint256(deficitOrSurplusInUsd);
-            // usdInDpcPrice = 250 / 500 = 0.5
-            usdInDpcPrice = depositorCoin.totalSupply() / surplusInUsd;
-            addedSurplusEth = msg.value;
+            return;
         }
 
+        uint256 surplusInUsd = uint256(deficitOrSurplusInUsd);
+
+        // usdInDpcPrice = 250 / 500 = 0.5
+        uint256 usdInDpcPrice = depositorCoin.totalSupply() / surplusInUsd;
+
         // 0.5e18 * 1000 * 0.5 = 250e18
-        uint256 mintDepositorCoinAmount = addedSurplusEth *
+        uint256 mintDepositorCoinAmount = msg.value *
             oracle.getPrice() *
             usdInDpcPrice;
         depositorCoin.mint(msg.sender, mintDepositorCoinAmount);
